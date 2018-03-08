@@ -89,42 +89,6 @@ function love.load()
   initLander()
 end
 
-function createPs(direction, life, particles)
-  if particles == nil then particles = 128 end
-  local ps = love.graphics.newParticleSystem(love.graphics.newImage('particle.png'), particles)
-  ps:setParticleLifetime(life)
-  ps:setSizes(0.15)
-  ps:setSpeed(800, 1000)
-  ps:setAreaSpread('uniform', lander.width / 2, lander.width / 2)
-  ps:setColors(COLOURS.target, {40, 38, 38, 0})
-  ps:setDirection(direction)
-  pss[#pss + 1] = ps
-  return ps
-end
-
-function initLander()
-  lander.y = lander.height
-  lander.x = CENTER.x - lander.width / 2
-  lander.speed = {x = 0, y = 0}
-  lander.fuel = lander.maxFuel
-  lander.finished = false
-  lander.hide = false
-  lander.won = false
-
-  local target = math.random(1, SEGMENTS)
-
-  for index = 1, SEGMENTS, 1 do
-    local height = math.random(SEGMENT_HEIGHT.min, SEGMENT_HEIGHT.max)
-    sagments[index] = {
-      x = index * WIDTH  / SEGMENTS - (lander.width * 2),
-      y = HEIGHT - height,
-      width = lander.width * 1.5,
-      height = height,
-      isTarget = index == target
-    }
-  end
-end
-
 function love.update(dt)
   if not waiting then
     lander.speed.y = lander.speed.y + GRAVITY
@@ -188,7 +152,7 @@ function love.update(dt)
   for i, pSystem in ipairs(pss) do
     pSystem:update(dt)
   end
-  
+
   if waiting then
     waitingtimer = waitingtimer + dt
     if waitingtimer > WAIT_TIME then
@@ -196,59 +160,6 @@ function love.update(dt)
       waitingtimer = 0
       initLander()
     end
-  end
-end
-
-function drawGround()
-  for index, segment in ipairs(sagments) do
-    local colour = COLOURS.normal
-    if segment.isTarget and not lander.won == true then colour = COLOURS.target end
-    love.graphics.setColor(colour)
-    love.graphics.rectangle("fill", segment.x, segment.y, segment.width, segment.height)
-  end
-end
-
-function drawLander()
-  if lander.hide then return nil end
-
-  local colour = COLOURS.target
-
-  love.graphics.setColor(BACKGROUND)
-  love.graphics.rectangle("fill", lander.x, lander.y, lander.width, lander.height, 2)
-  love.graphics.setLineWidth(4)
-  love.graphics.setColor(colour)
-  love.graphics.rectangle("line", lander.x, lander.y, lander.width, lander.height, 2)
-  love.graphics.setLineWidth(0)
-
-  local fuelHeight = lander.fuel / lander.maxFuel * lander.height
-  love.graphics.rectangle("fill", lander.x, lander.y + lander.height - fuelHeight, lander.width, fuelHeight, 2)
-end
-
-function drawFuelGauge()
-  love.graphics.setColor(COLOURS.target)
-  if lander.fuel <= 0 and pulse < 8 then
-    love.graphics.rectangle("fill", 30, 30, 170, 50)
-    love.graphics.setColor(BACKGROUND)
-    love.graphics.print("EMPTY FUEL", 40, 40)
-  end
-end
-
-function explode()
-  if not waiting then
-    psExplode:moveTo(lander.x, lander.y)
-    psExplode:emit(256)
-    waiting = true
-    lander.hide = true
-  end
-end
-
-function win()
-  if not waiting then
-    waiting = true
-    lander.won = true
-    lander.fuel = lander.maxFuel
-    psWin:moveTo(lander.x, lander.y)
-    psWin:emit(30)
   end
 end
 
@@ -275,5 +186,101 @@ function love.keyreleased(key)
     if conf[key] == true then
       lander.direction[dir] = false
     end
+  end
+end
+
+-- create a particle system
+function createPs(direction, life, particles)
+  if particles == nil then particles = 128 end
+  local ps = love.graphics.newParticleSystem(love.graphics.newImage('particle.png'), particles)
+  ps:setParticleLifetime(life)
+  ps:setSizes(0.15)
+  ps:setSpeed(800, 1000)
+  ps:setAreaSpread('uniform', lander.width / 2, lander.width / 2)
+  ps:setColors(COLOURS.target, {40, 38, 38, 0})
+  ps:setDirection(direction)
+  pss[#pss + 1] = ps
+  return ps
+end
+
+-- initialise new game state
+function initLander()
+  lander.y = lander.height
+  lander.x = CENTER.x - lander.width / 2
+  lander.speed = {x = 0, y = 0}
+  lander.fuel = lander.maxFuel
+  lander.finished = false
+  lander.hide = false
+  lander.won = false
+
+  local target = math.random(1, SEGMENTS)
+
+  for index = 1, SEGMENTS, 1 do
+    local height = math.random(SEGMENT_HEIGHT.min, SEGMENT_HEIGHT.max)
+    sagments[index] = {
+      x = index * WIDTH  / SEGMENTS - (lander.width * 2),
+      y = HEIGHT - height,
+      width = lander.width * 1.5,
+      height = height,
+      isTarget = index == target
+    }
+  end
+end
+
+-- draw ground segments
+function drawGround()
+  for index, segment in ipairs(sagments) do
+    local colour = COLOURS.normal
+    if segment.isTarget and not lander.won == true then colour = COLOURS.target end
+    love.graphics.setColor(colour)
+    love.graphics.rectangle("fill", segment.x, segment.y, segment.width, segment.height)
+  end
+end
+
+-- draw the lander
+function drawLander()
+  if lander.hide then return nil end
+
+  local colour = COLOURS.target
+
+  love.graphics.setColor(BACKGROUND)
+  love.graphics.rectangle("fill", lander.x, lander.y, lander.width, lander.height, 2)
+  love.graphics.setLineWidth(4)
+  love.graphics.setColor(colour)
+  love.graphics.rectangle("line", lander.x, lander.y, lander.width, lander.height, 2)
+  love.graphics.setLineWidth(0)
+
+  local fuelHeight = lander.fuel / lander.maxFuel * lander.height
+  love.graphics.rectangle("fill", lander.x, lander.y + lander.height - fuelHeight, lander.width, fuelHeight, 2)
+end
+
+-- draw the fuel warning
+function drawFuelGauge()
+  love.graphics.setColor(COLOURS.target)
+  if lander.fuel <= 0 and pulse < 8 then
+    love.graphics.rectangle("fill", 30, 30, 170, 50)
+    love.graphics.setColor(BACKGROUND)
+    love.graphics.print("EMPTY FUEL", 40, 40)
+  end
+end
+
+-- handle lander crash
+function explode()
+  if not waiting then
+    psExplode:moveTo(lander.x, lander.y)
+    psExplode:emit(256)
+    waiting = true
+    lander.hide = true
+  end
+end
+
+-- handle lander landing sucessfully
+function win()
+  if not waiting then
+    waiting = true
+    lander.won = true
+    lander.fuel = lander.maxFuel
+    psWin:moveTo(lander.x, lander.y)
+    psWin:emit(30)
   end
 end
